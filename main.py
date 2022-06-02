@@ -1,4 +1,3 @@
-
 speedFactor = 80
 pin_L = DigitalPin.P13
 pin_R = DigitalPin.P14
@@ -12,6 +11,23 @@ pins.set_pull(pin_R, PinPullMode.PULL_NONE)
 bluetooth.start_uart_service()
 basic.show_string("S")
 
+def on_received_value(value):
+    if value == A:
+        PCAmotor.motor_run(PCAmotor.Motors.M1, 255)
+        PCAmotor.motor_run(PCAmotor.Motors.M2, 255)
+    
+    if name == "dozadu" and value == 0:
+        PCAmotor.motor_run(PCAmotor.Motors.M1, -255)
+        PCAmotor.motor_run(PCAmotor.Motors.M2, -255)
+    if name == "vpravo" and value == 1:
+        PCAmotor.motor_run(PCAmotor.Motors.M1, 255)
+        PCAmotor.motor_run(PCAmotor.Motors.M2, 100)
+    if name == "vlevo" and value == 1:
+        PCAmotor.motor_run(PCAmotor.Motors.M1, 100)
+        PCAmotor.motor_run(PCAmotor.Motors.M2, 255)
+radio.on_received_value(on_received_value)
+
+
 # temporary code
 motor_run(100, 100); basic.pause(2000)
 motor_run(); basic.pause(300)
@@ -21,11 +37,11 @@ motor_run()
 strip.set_pixel_color(0, neopixel.hsl(0, 50, 50)) # hmax = 360, smax = 100, lmax = 50
 strip.set_pixel_color(3, neopixel.hsl(140, 100, 25))
 strip.show()
-# end of temporary code
+
 
 def motor_run(left = 0, right = 0, speed_factor = 80):
-    PCAmotor.motor_run(PCAmotor.Motors.M1, Math.map(Math.constrain(left * (speedFactor / 100), -100, 100), -100, 100, -255, 255))
-    PCAmotor.motor_run(PCAmotor.Motors.M4, Math.map(Math.constrain(-1 * right * (speedFactor / 100), -100, 100), -100, 100, -255, 255))
+     PCAmotor.motor_run(PCAmotor.Motors.M1, Math.map(Math.constrain(left * (speedFactor / 100), -100, 100), -100, 100, -255, 255))
+     PCAmotor.motor_run(PCAmotor.Motors.M4, Math.map(Math.constrain(-1 * right * (speedFactor / 100), -100, 100), -100, 100, -255, 255))
 
 def on_bluetooth_connected():
     global connected
