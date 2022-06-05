@@ -1,70 +1,53 @@
-speedFactor = 80
-pin_L = DigitalPin.P13
-pin_R = DigitalPin.P14
-pin_Trig = DigitalPin.P8
-pin_Echo = DigitalPin.P15
-whiteline = 1
-connected = 0
-strip = neopixel.create(DigitalPin.P16, 4, NeoPixelMode.RGB)
-pins.set_pull(pin_L, PinPullMode.PULL_NONE)
-pins.set_pull(pin_R, PinPullMode.PULL_NONE)
+uartdata = ""
+connected = False
+bluetooth.set_transmit_power(7)
 bluetooth.start_uart_service()
-basic.show_string("S")
+pin_L = DigitalPin.P12
+pin_R = DigitalPin.P15
 
-def on_received_value(value):
-    if value == A:
-        PCAmotor.motor_run(PCAmotor.Motors.M1, 255)
-        PCAmotor.motor_run(PCAmotor.Motors.M2, 255)
-    
-    if name == "dozadu" and value == 0:
-        PCAmotor.motor_run(PCAmotor.Motors.M1, -255)
-        PCAmotor.motor_run(PCAmotor.Motors.M2, -255)
-    if name == "vpravo" and value == 1:
-        PCAmotor.motor_run(PCAmotor.Motors.M1, 255)
+def on_forever():
+    pins.set_pull(DigitalPin.P12, PinPullMode.PULL_NONE)
+    read_L = pins.digital_read_pin(DigitalPin.P12)
+    print(read_L)
+    if read_L == 0:
         PCAmotor.motor_run(PCAmotor.Motors.M2, 100)
-    if name == "vlevo" and value == 1:
-        PCAmotor.motor_run(PCAmotor.Motors.M1, 100)
+        PCAmotor.motor_run(PCAmotor.Motors.M1, 100)  
+        basic.show_icon(IconNames.HEART)
+    basic.pause(20)
+    if read_L == 1:
+        PCAmotor.motor_run(PCAmotor.Motors.M2, 80)
+        PCAmotor.motor_run(PCAmotor.Motors.M1, 50)
+        PCAmotor.motor_stop_all()
+        basic.show_icon(IconNames.SAD)
+    basic.pause(20)
+basic.forever(on_forever)
+
+def manual():
+    if uartdata == '0':
+        PCAmotor.motor_stop_all()
+    if uartdata == 'A':
         PCAmotor.motor_run(PCAmotor.Motors.M2, 255)
-radio.on_received_value(on_received_value)
-
-
-# temporary code
-motor_run(100, 100); basic.pause(2000)
-motor_run(); basic.pause(300)
-motor_run(-100, -100, 60); basic.pause(2000)
-motor_run()
-
-strip.set_pixel_color(0, neopixel.hsl(0, 50, 50)) # hmax = 360, smax = 100, lmax = 50
-strip.set_pixel_color(3, neopixel.hsl(140, 100, 25))
-strip.show()
-
-
-def motor_run(left = 0, right = 0, speed_factor = 80):
-     PCAmotor.motor_run(PCAmotor.Motors.M1, Math.map(Math.constrain(left * (speedFactor / 100), -100, 100), -100, 100, -255, 255))
-     PCAmotor.motor_run(PCAmotor.Motors.M4, Math.map(Math.constrain(-1 * right * (speedFactor / 100), -100, 100), -100, 100, -255, 255))
+        PCAmotor.motor_run(PCAmotor.Motors.M1, 255)
+    if uartdata == "B":
+        PCAmotor.motor_run(PCAmotor.Motors.M2, -255)
+        PCAmotor.motor_run(PCAmotor.Motors.M1, -255)
+    if uartdata == "D":
+        PCAmotor.motor_run(PCAmotor.Motors.M2, 255)
+        PCAmotor.motor_run(PCAmotor.Motors.M1, 50)
+    if uartdata == "C":
+        PCAmotor.motor_run(PCAmotor.Motors.M2, 50)
+        PCAmotor.motor_run(PCAmotor.Motors.M1, 255)
 
 def on_bluetooth_connected():
-    global connected
-    basic.show_icon(IconNames.HEART)
-    connected = 1
-    while connected == 1:
-        uartData = bluetooth.uart_read_until(serial.delimiters(Delimiters.HASH))
-        console.log_value("data", uartData)
+    global connected, uartdata
+    connected = True
+    while connected:
+        uartdata = bluetooth.uart_read_until(serial.delimiters(Delimiters.HASH))
+        manual()
 bluetooth.on_bluetooth_connected(on_bluetooth_connected)
 
 def on_bluetooth_disconnected():
     global connected
-    basic.show_icon(IconNames.SAD)
-    connected = 0
+    connected = False
 bluetooth.on_bluetooth_disconnected(on_bluetooth_disconnected)
 
-def on_forever():
-    obstacle_distance = sonar.ping(pin_Trig, pin_Echo, PingUnit.CENTIMETERS, 100)
-
-    l = False if (whiteline ^ pins.digital_read_pin(pin_L)) == 0 else True
-    r = False if (whiteline ^ pins.digital_read_pin(pin_R)) == 0 else True
-
-    # TO DO ...
-
-    basic.pause(50) #reakční frekvence 20 Hz
-basic.forever(on_forever)
